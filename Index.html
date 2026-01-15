@@ -223,7 +223,7 @@
             STATE.scripts++;
             document.getElementById('count-scripts').innerText = STATE.scripts;
             
-            let lua = `local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/library/windui"))()\n\n`;
+            let lua = `local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()\n\n`;
             lua += `local Window = WindUI:CreateWindow({\n    Title = "${document.getElementById('win-title').value}",\n    Icon = "rbxassetid://123456789",\n    Author = "Darkz",\n    Folder = "DarkzConfig"\n})\n\n`;
 
             STATE.tabs.forEach((t, i) => {
