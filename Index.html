@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DARKZ Scripts | Professional UI Builder</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --bg: #05060b; --panel: #0d0f14; --border: #1f2937; --accent: #7c3aed; --text: #f3f4f6; --subtext: #9ca3af; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* SIDEBAR */
+        .sidebar { width: 240px; background: #08090d; border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
+        .brand { font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 30px; letter-spacing: 1px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; color: var(--subtext); margin-bottom: 5px; border: 1px solid transparent; }
+        .nav-item.active { background: #161a23; color: #fff; border: 1px solid var(--accent); }
+
+        /* MAIN CONTENT */
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .header { height: 70px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; background: #0b0d12; }
+        
+        .screen { display: none; flex: 1; overflow-y: auto; padding: 30px; }
+        .screen.active { display: block; }
+
+        /* DASHBOARD CARDS */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px; }
+        .stat-card { background: #0d0f14; border: 1px solid var(--border); padding: 25px; border-radius: 12px; text-align: center; }
+        .stat-card h2 { font-size: 48px; margin: 10px 0; color: var(--accent); }
+
+        /* BUILDER INTERFACE */
+        .builder-container { display: grid; grid-template-columns: 320px 1fr; gap: 20px; height: 80vh; }
+        .config-box { background: #08090d; border: 1px solid var(--border); padding: 20px; border-radius: 12px; }
+        .canvas-preview { background: #020305; border: 1px solid var(--border); border-radius: 12px; padding: 30px; display: flex; justify-content: center; align-items: flex-start; }
+        
+        /* WINDOW STYLE */
+        .hub-window { width: 500px; min-height: 350px; background: #0d0f14; border: 1px solid #2d3748; border-radius: 10px; display: flex; }
+        .hub-sidebar { width: 130px; border-right: 1px solid #1a202c; padding: 15px; }
+        .hub-main { flex: 1; padding: 20px; }
+        
+        /* ELEMENT STYLES */
+        .preview-item { background: #161a23; border: 1px solid #2d3748; padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .preview-item:hover { border-color: var(--accent); }
+        
+        /* MODALS */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #0d0f14; padding: 30px; border-radius: 15px; border: 1px solid var(--accent); width: 450px; }
+        
+        input, textarea, select { width: 100%; padding: 12px; background: #05060b; border: 1px solid var(--border); color: #fff; border-radius: 8px; margin-top: 10px; margin-bottom: 15px; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-help { background: #10b981; color: white; margin-top: 10px; width: 100%; }
+        
+        .help-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">DARKZ Scripts</div>
+        <div class="nav-item active" onclick="switchTab('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</div>
+        <div class="nav-item" onclick="switchTab('builder')"><i data-lucide="hammer"></i> Visual UI Builder</div>
+        <div class="nav-item" onclick="switchTab('obfuscator')"><i data-lucide="shield-alert"></i> Obfuscator</div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <div id="header-title">Dashboard</div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-accent" onclick="exportCode()"><i data-lucide="code"></i> Export Code</button>
+            </div>
+        </div>
+
+        <div id="screen-dashboard" class="screen active">
+            <h1>Welcome back, Developer</h1>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p>Scripts Created</p>
+                    <h2 id="count-scripts">0</h2>
+                </div>
+                <div class="stat-card">
+                    <p>Loadstrings Generated</p>
+                    <h2 id="count-loadstrings">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-builder" class="screen">
+            <div class="builder-container">
+                <div class="config-box">
+                    <label>Window Title</label>
+                    <input type="text" id="win-title" value="Darkz Hub" oninput="render()">
+                    
+                    <label>Tabs</label>
+                    <button class="btn btn-accent" style="width:100%" onclick="addTab()">+ Add Tab</button>
+                    <div id="tab-list" style="margin-top:15px;"></div>
+                    
+                    <button class="btn btn-help" onclick="openHelp()"><i data-lucide="life-buoy"></i> Help Menu</button>
+                </div>
+                
+                <div class="canvas-preview">
+                    <div class="hub-window">
+                        <div class="hub-sidebar" id="win-tabs"></div>
+                        <div class="hub-main" id="win-content">
+                            <p style="opacity:0.2; text-align:center; margin-top:100px;">Select or Add a Tab</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="edit-type">Edit Element</h2>
+            <div id="modal-inputs"></div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn btn-accent" onclick="saveElement()">Save</button>
+                <button class="btn" style="background:#ef4444;" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
+            <h2>Quick Scripts</h2>
+            <div class="help-grid">
+                <button class="btn btn-accent" onclick="copyScript('anti-afk')">Anti-AFK</button>
+                <button class="btn btn-accent" onclick="copyScript('inf-yield')">Infinite Yield</button>
+                <button class="btn btn-accent" onclick="copyScript('esp')">ESP Players</button>
+                <button class="btn btn-accent" onclick="copyScript('fly')">Fly Script</button>
+                <button class="btn btn-accent" onclick="copyScript('hop')">Server Hop</button>
+            </div>
+            <button class="btn" style="width:100%; margin-top:15px;" onclick="closeHelp()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let STATE = { scripts: 0, loadstrings: 0, title: "Darkz Hub", tabs: [] };
+        let currentTabIdx = null;
+        let currentElementIdx = null;
+
+        function switchTab(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`screen-${screen}`).classList.add('active');
+            event.currentTarget.classList.add('active');
+            document.getElementById('header-title').innerText = screen.charAt(0).toUpperCase() + screen.slice(1);
+        }
+
+        function addTab() {
+            const name = prompt("Tab Name:", "New Tab");
+            if(name) {
+                STATE.tabs.push({ title: name, elements: [] });
+                render();
+            }
+        }
+
+        function addElement(type) {
+            STATE.tabs[currentTabIdx].elements.push({ type, title: `New ${type}`, value: "100", options: "Option 1, Option 2", code: 'print("Executed")' });
+            render();
+        }
+
+        function render() {
+            const tabSide = document.getElementById('win-tabs');
+            const mainView = document.getElementById('win-content');
+            const list = document.getElementById('tab-list');
+            
+            tabSide.innerHTML = "";
+            list.innerHTML = "";
+            
+            STATE.tabs.forEach((tab, i) => {
+                tabSide.innerHTML += `<div style="padding:10px; font-size:12px; border-radius:5px; cursor:pointer; background:${i===currentTabIdx?'#1e1b4b':''}" onclick="currentTabIdx=${i};render()">${tab.title}</div>`;
+                list.innerHTML += `<div style="background:#161a23; padding:10px; margin-bottom:5px; border-radius:5px; display:flex; justify-content:space-between">
+                    ${tab.title} <button onclick="currentTabIdx=${i};addElement('Button')">+</button></div>`;
+            });
+
+            if(currentTabIdx !== null) {
+                mainView.innerHTML = `<h3>${STATE.tabs[currentTabIdx].title}</h3>`;
+                STATE.tabs[currentTabIdx].elements.forEach((el, j) => {
+                    mainView.innerHTML += `<div class="preview-item" onclick="openEdit(${j})">
+                        ${el.title} <span>${el.type}</span>
+                    </div>`;
+                });
+                // Shortcuts for Adding Elements inside UI
+                mainView.innerHTML += `
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px; margin-top:20px;">
+                    <button class="btn btn-accent" style="font-size:10px;" onclick="addElement('Button')">Button</button>
+                    <button class="btn btn-accent" style="font-size:10px;" onclick="addElement('Toggle')">Toggle</button>
+                    <button class="btn btn-accent" style="font-size:10px;" onclick="addElement('Slider')">Slider</button>
+                    <button class="btn btn-accent" style="font-size:10px;" onclick="addElement('Dropdown')">Drop</button>
+                </div>`;
+            }
+            lucide.createIcons();
+        }
+
+        function openEdit(idx) {
+            currentElementIdx = idx;
+            const el = STATE.tabs[currentTabIdx].elements[idx];
+            document.getElementById('edit-modal').style.display = 'flex';
+            const inputs = document.getElementById('modal-inputs');
+            
+            let html = `<label>Title</label><input type="text" id="edit-title" value="${el.title}">`;
+            
+            if(el.type === 'Dropdown') html += `<label>Options (comma separated)</label><input type="text" id="edit-options" value="${el.options}">`;
+            if(el.type === 'Slider') html += `<label>Range (Min-Max)</label><input type="text" id="edit-range" value="${el.value}">`;
+            
+            html += `<label>Code / Function</label><textarea id="edit-code">${el.code}</textarea>`;
+            inputs.innerHTML = html;
+        }
+
+        function saveElement() {
+            const el = STATE.tabs[currentTabIdx].elements[currentElementIdx];
+            el.title = document.getElementById('edit-title').value;
+            el.code = document.getElementById('edit-code').value;
+            if(document.getElementById('edit-options')) el.options = document.getElementById('edit-options').value;
+            if(document.getElementById('edit-range')) el.value = document.getElementById('edit-range').value;
+            closeModal();
+            render();
+        }
+
+        function exportCode() {
+            STATE.scripts++;
+            document.getElementById('count-scripts').innerText = STATE.scripts;
+            
+            let lua = `local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/library/windui"))()\n\n`;
+            lua += `local Window = WindUI:CreateWindow({\n    Title = "${document.getElementById('win-title').value}",\n    Icon = "rbxassetid://123456789",\n    Author = "Darkz",\n    Folder = "DarkzConfig"\n})\n\n`;
+
+            STATE.tabs.forEach((t, i) => {
+                lua += `local Tab = Window:Tab({\n    Title = "${t.title}",\n    Icon = "home",\n    Locked = false,\n})\n\n`;
+                t.elements.forEach(e => {
+                    lua += `local ${e.type} = Tab:${e.type}({\n    Title = "${e.title}",\n    Desc = "Created via Darkz Scripts",\n    Callback = function(v)\n        ${e.code}\n    end\n})\n\n`;
+                });
+            });
+
+            navigator.clipboard.writeText(lua);
+            alert("WindUI Lua Script copied to clipboard!");
+        }
+
+        function copyScript(type) {
+            const scripts = {
+                'anti-afk': 'print("Anti-AFK Enabled")',
+                'inf-yield': 'loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()',
+                'esp': 'print("ESP Players Toggled")',
+                'fly': 'print("Fly Script Copied")',
+                'hop': 'print("Server Hop Executed")'
+            };
+            navigator.clipboard.writeText(scripts[type]);
+            alert(`${type} script copied!`);
+        }
+
+        function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
+        function openHelp() { document.getElementById('help-modal').style.display = 'flex'; }
+        function closeHelp() { document.getElementById('help-modal').style.display = 'none'; }
+        
+        lucide.createIcons();
+    </script>
+</body>
+                  </html>
